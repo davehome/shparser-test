@@ -2,11 +2,11 @@
 #include "shp.h"
 
 void
-shp_init(shp_scanner *scanner, shp_scan_func_t scan_func, shp_context *ctx)
+shp_init(shp_scanner *scanner, shp_cb *cb, shp_context *ctx)
 {
 	scanner = memset(scanner, 0, sizeof(shp_scanner));
-	scanner->scan_func = scan_func;
 	scanner->ctx = ctx;
+	scanner->cb = cb; /* gets rid of useless gcc warning */
 	scanner->state = STATE_GENERAL;
 	scanner->next_state = STATE_GENERAL;
 	memset(scanner->ctx->key, 0, BUFSIZ);

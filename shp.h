@@ -7,6 +7,7 @@
 #define stringify( name ) # name
 
 typedef struct _shp_scanner_t shp_scanner;
+typedef struct _shp_cb_t shp_cb;
 
 typedef char *(*shp_scan_func_t)(void *);
 
@@ -17,29 +18,35 @@ typedef enum {
 } shp_status;
 
 typedef enum {
-	STATE_GENERAL,
-	STATE_COMMENT,
-	STATE_IDENTIFIER,
-	STATE_VALUE,
-	STATE_SQUOTE,
-	STATE_DQUOTE,
-	STATE_REFERENCE,
-	STATE_SHELLCMD
+	STATE_GENERAL		= 0x100,
+	STATE_COMMENT		= 0x200,
+	STATE_IDENTIFIER	= 0x300,
+	STATE_VALUE		= 0x400,
+	STATE_REFERENCE		= 0x500,
+	STATE_SHELLCMD		= 0x600
 } shp_state;
 
+struct _shp_cb_t {
+	shp_scan_func_t scan;
+
+};
+
 struct _shp_scanner_t {
-	shp_scan_func_t scan_func;
 	shp_context *ctx;
+	shp_cb *cb;
 	shp_state state;
 	shp_state next_state;
 	char error[BUFSIZ];
 	char cmdbuf[BUFSIZ];
 };
 
-void shp_init(shp_scanner *, shp_scan_func_t, shp_context *);
+int shp_getopt(shp_context *, int, char **);
+int shp_show_usage(const char *);
+void shp_init(shp_scanner *, shp_cb *, shp_context *);
+char *shp_file_input(void *);
 shp_status shp_scan(shp_scanner *);
 shp_chars shp_translate(char) __attribute__ ((const));
 const char *shp_str_state(shp_state *) __attribute__ ((pure));
-void shp_shcmd(shp_scanner *, const char *);
+shp_status shp_shcmd(shp_scanner *, const char *);
 
 #endif /* SHP_H */

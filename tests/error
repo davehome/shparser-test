@@ -1,2 +1,1 @@
-XBPS_DISTDIR=$HOME/blah
-
+pkgname="$(cat foooooo)"

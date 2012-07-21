@@ -48,13 +48,13 @@ ifeq ($(CC),clang)
   GWARN :=
   SSP   :=
 else
-  SSP   := --param ssp-buffer-size=4
+  SSP   := --param ssp-buffer-size=2
 endif
 
 CFLAGS  += -ggdb
 CFLAGS  += -O2 -pipe -mtune=generic
 CFLAGS  += -fstack-protector $(SSP)
-CFLAGS  += -D_FORTIFY_SOURCE=4
+CFLAGS  += -D_FORTIFY_SOURCE=2
 CFLAGS  += -std=c11 -D_XOPEN_SOURCE=700
 CFLAGS  += $(WARN) $(GWARN)
 LDFLAGS += -Wl,--as-needed
@@ -72,9 +72,12 @@ clean:
 
 test: all
 	-@for t in $(wildcard tests/*); do			\
+		echo;						\
 		echo "[=== Running test for: '$$t' ===]";	\
+		echo;						\
 		./$(TARGET) $$t;				\
 	done
+	@echo
 
 .PHONY: all clean test
 .PRECIOUS: $(SRC)
