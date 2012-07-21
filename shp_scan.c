@@ -27,15 +27,15 @@ shp_scan(shp_scanner *scanner)
 		category = shp_translate(c);
 		selector = 1000 * *state + category;
 		switch (selector) {
+		case 1000 * STATE_GENERAL + CHAR_GENERAL:
+			*next_state = STATE_IDENTIFIER;
+			--ctx->pos; --data;
+			break;
 		case 1000 * STATE_GENERAL + CHAR_HASH:
 		case 1000 * STATE_IDENTIFIER + CHAR_HASH:
 			*state = STATE_IDENTIFIER;
 			ctx->line++;
 			return (SHP_SCANNING);
-		case 1000 * STATE_GENERAL + CHAR_GENERAL:
-			*next_state = STATE_IDENTIFIER;
-			--ctx->pos; --data;
-			break;
 		case 1000 * STATE_IDENTIFIER + CHAR_NEWLINE:
 			*next_state = STATE_IDENTIFIER;
 			break;
@@ -48,6 +48,60 @@ shp_scan(shp_scanner *scanner)
 			*next_state = STATE_VALUE;
 			ctx->key[ctx->klen++] = '\0';
 			putchar(c);
+			break;
+		case 1000 * STATE_REFERENCE + CHAR_OPAREN:
+			*next_state = STATE_SHELLCMD;
+			ctx->commanding = true;
+			break;
+		case 1000 * STATE_REFERENCE + CHAR_OBRACE:
+			*next_state = STATE_REFERENCE;
+			break;
+		case 1000 * STATE_REFERENCE + CHAR_GENERAL:
+			*next_state = STATE_REFERENCE;
+			ctx->ref[ctx->rlen++] = c;
+			break;
+		case 1000 * STATE_REFERENCE + CHAR_EBRACE:
+			*next_state = (ctx->commanding)
+				? STATE_SHELLCMD
+				: STATE_VALUE;
+			ctx->ref[ctx->rlen++] = '\0';
+			if ((tmp = getenv(ctx->ref)) == NULL) tmp = "";
+			strncpy(ctx->ref, tmp, strlen(tmp));
+			ctx->ref[strlen(tmp)] = '\0';
+			ctx->rlen = strlen(ctx->ref);
+			if (ctx->commanding) {
+				strncpy(&ctx->cmd[ctx->clen], ctx->ref,
+					ctx->rlen);
+				ctx->clen += ctx->rlen;
+			} else {
+				strncpy(&ctx->val[ctx->vlen], ctx->ref,
+					ctx->rlen);
+				ctx->vlen += ctx->rlen;
+				printf("%s", ctx->ref);
+			}
+			ctx->rlen = 0;
+			break;
+		case 1000 * STATE_SHELLCMD + CHAR_GENERAL:
+		case 1000 * STATE_SHELLCMD + CHAR_SPACE:
+		case 1000 * STATE_SHELLCMD + CHAR_TAB:
+		case 1000 * STATE_SHELLCMD + CHAR_SQUOTE:
+		case 1000 * STATE_SHELLCMD + CHAR_DQUOTE:
+			*next_state = STATE_SHELLCMD;
+			ctx->cmd[ctx->clen++] = c;
+			break;
+		case 1000 * STATE_SHELLCMD + CHAR_DOLLAR:
+			*next_state = STATE_REFERENCE;
+			break;
+		case 1000 * STATE_SHELLCMD + CHAR_EPAREN:
+			*next_state = STATE_VALUE;
+			ctx->cmd[ctx->clen++] = '\0';
+			shp_shcmd(scanner, ctx->cmd);
+			strncpy(&ctx->val[ctx->vlen], scanner->cmdbuf,
+				strlen(scanner->cmdbuf));
+			ctx->vlen += strlen(scanner->cmdbuf);
+			printf("%s", scanner->cmdbuf);
+			ctx->commanding = false;
+			ctx->clen = 0;
 			break;
 		case 1000 * STATE_VALUE + CHAR_SQUOTE:
 		case 1000 * STATE_VALUE + CHAR_DQUOTE:
@@ -79,57 +133,6 @@ shp_scan(shp_scanner *scanner)
 			*next_state = STATE_VALUE;
 			ctx->val[ctx->vlen++] = c;
 			putchar(c);
-			break;
-		case 1000 * STATE_REFERENCE + CHAR_OBRACE:
-			*next_state = STATE_REFERENCE;
-			break;
-		case 1000 * STATE_REFERENCE + CHAR_GENERAL:
-			*next_state = STATE_REFERENCE;
-			if (ctx->commanding) {
-				ctx->cmd[ctx->clen++] = c;
-			} else {
-				ctx->ref[ctx->rlen++] = c;
-			}
-			break;
-		case 1000 * STATE_REFERENCE + CHAR_EBRACE:
-			*next_state = STATE_VALUE;
-			ctx->ref[ctx->rlen++] = '\0';
-			if ((tmp = getenv(ctx->ref)) == NULL) tmp = "";
-			strncpy(ctx->ref, tmp, strlen(tmp));
-			ctx->ref[strlen(tmp)] = '\0';
-			ctx->rlen = strlen(ctx->ref);
-			strncpy(&ctx->val[ctx->vlen], ctx->ref,
-				ctx->rlen);
-			ctx->vlen += ctx->rlen;
-			printf("%s", ctx->ref);
-			ctx->rlen = 0;
-			break;
-		case 1000 * STATE_REFERENCE + CHAR_SPACE:
-			if (ctx->commanding) {
-				*next_state = STATE_REFERENCE;
-				ctx->cmd[ctx->clen++] = c;
-				break;
-			} else {
-				sprintf(scanner->error,
-					"\nError at %s:%d:%d: Can't have "
-					"space in a %s",
-					ctx->filename, ctx->line, ctx->pos + 1,
-					shp_str_state(state));
-				return (SHP_ERROR);
-			}
-		case 1000 * STATE_REFERENCE + CHAR_OPAREN:
-			*next_state = STATE_REFERENCE;
-			ctx->commanding = !ctx->commanding;
-			break;
-		case 1000 * STATE_REFERENCE + CHAR_EPAREN:
-			*next_state = STATE_VALUE;
-			ctx->commanding = !ctx->commanding;
-			ctx->cmd[ctx->clen++] = '\0';
-			shp_shcmd(scanner, ctx->cmd);
-			strncpy(&ctx->val[ctx->vlen], scanner->cmdbuf,
-				strlen(scanner->cmdbuf));
-			ctx->vlen += strlen(scanner->cmdbuf);
-			printf("%s", scanner->cmdbuf);
 			break;
 		case 1000 * STATE_VALUE + CHAR_NEWLINE:
 			if (ctx->quoting) {
