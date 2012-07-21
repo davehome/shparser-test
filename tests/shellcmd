@@ -1,0 +1,17 @@
+# This is a comment
+pkgname=fooobar
+_majorver=1.2
+_minorver=3
+version=${_majorver}.${_minorver}.$(date -u +%Y%m%d)
+revision=4
+homepage="http://www.fooobar.com"
+license="GPL-2"
+build_style=gnu-configure
+makedepends="foo bar baz"
+distfiles="${homepage}/download/${_majorver}/${pkgname}/${version}.tar.xz"
+checksum=2a1a20676627231700598a69ccc4a53d866e241cabdca2705cb345340cc79e82
+desc="The ${pkgname} package."
+long_desc="
+ This is the ${pkgname} package that does some stuff and some other stuff too.
+ Hopefully it is useful to you (its useless)."
+subpackages="${pkgname}-devel lib${pkgname}"
