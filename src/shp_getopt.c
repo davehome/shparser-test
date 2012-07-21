@@ -10,16 +10,15 @@ shp_getopt(shp_context *ctx, int argc, char **argv)
 	int opt, rv;
 	const char *progname;
 
+	rv = 0;
 	progname = argv[0];
 
 	while ((opt = getopt(argc, argv, "h")) != -1) {
 		switch (opt) {
-			case 'h':
-				return shp_show_usage(progname);
-				break;
-			default:
-				return shp_show_usage(progname);
-				break;
+		case 'h':
+		default:
+			return shp_show_usage(progname);
+			break;
 		}
 	}
 
@@ -30,15 +29,8 @@ shp_getopt(shp_context *ctx, int argc, char **argv)
 		ctx->filename = "(stdin)";
 		ctx->fp = stdin;
 	} else {
-		ctx->filename = argv[0];
-		ctx->fp = fopen(ctx->filename, "r");
-		if (errno != 0 || ctx->fp == NULL) {
-			rv = errno;
-			fprintf(stdout, "Can't open template: `%s', %s.\n",
-				ctx->filename, strerror(rv));
-			return (rv);
-		}
+		rv = shp_context_script_file(ctx, argv[0]);
 	}
 
-	return 0;
+	return rv;
 }

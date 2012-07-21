@@ -6,10 +6,10 @@
 
 #define stringify( name ) # name
 
+typedef char *(*shp_scan_func_t)(void *);
+
 typedef struct _shp_scanner_t shp_scanner;
 typedef struct _shp_cb_t shp_cb;
-
-typedef char *(*shp_scan_func_t)(void *);
 
 typedef enum {
 	SHP_SCANNING,
@@ -23,7 +23,8 @@ typedef enum {
 	STATE_IDENTIFIER	= 0x300,
 	STATE_VALUE		= 0x400,
 	STATE_REFERENCE		= 0x500,
-	STATE_SHELLCMD		= 0x600
+	STATE_SHELLCMD		= 0x600,
+	STATE_SOURCED		= 0x700
 } shp_state;
 
 struct _shp_cb_t {
@@ -43,8 +44,11 @@ struct _shp_scanner_t {
 int shp_getopt(shp_context *, int, char **);
 int shp_show_usage(const char *);
 void shp_init(shp_scanner *, shp_cb *, shp_context *);
+int shp_context_script_file(shp_context *, const char *);
+void shp_context_end(shp_context *);
 char *shp_file_input(void *);
 shp_status shp_scan(shp_scanner *);
+shp_status shp_scan_sourced(const char *);
 shp_chars shp_translate(char) __attribute__ ((const));
 const char *shp_str_state(shp_state *) __attribute__ ((pure));
 shp_status shp_shcmd(shp_scanner *, const char *);

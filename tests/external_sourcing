@@ -1,0 +1,7 @@
+# this is my local dir for now until i can parse control statements
+# and functions
+
+. ${XBPS_SRCPKGDIR}/template
+
+pkgname=${pkgname}-alternate
+and=stuff

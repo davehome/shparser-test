@@ -16,6 +16,7 @@ shp_translate (char c)
 	case ')' : return CHAR_EPAREN;
 	case '\'': return CHAR_SQUOTE;
 	case '"' : return CHAR_DQUOTE;
+	case '.' : return CHAR_DOT;
 	/*case '|' : return CHAR_PIPE;
 	case '&' : return CHAR_AMP;*/
 	default  : return CHAR_GENERAL;

@@ -1,7 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "shp.h"
-
 
 int
 main(int argc, char **argv)
@@ -12,12 +12,11 @@ main(int argc, char **argv)
 	shp_scanner scanner;
 	shp_status status = 0;
 
-	memset(&ctx, 0, sizeof(shp_context));
-
 	if ((rv = shp_getopt(&ctx, argc, argv)) != 0)
 		return (rv);
 
-	cb.scan = shp_file_input;
+	setenv("XBPS_SRCPKGDIR", "tests", 1);
+
 	shp_init(&scanner, &cb, &ctx);
 
 	while (status == SHP_SCANNING)
@@ -28,7 +27,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s\n", scanner.error);
 	}
 
-	fclose(ctx.fp);
+	shp_context_end(&ctx);
 
 	return ((int)status - 1);
 }

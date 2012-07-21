@@ -12,12 +12,14 @@ struct _shp_context_t {
 	char val[BUFSIZ];
 	char ref[BUFSIZ];
 	char cmd[BUFSIZ];
+	char src[BUFSIZ];
 	char version[BUFSIZ];
 	const char *filename;
 	FILE *fp;
-	size_t line, pos, klen, vlen, rlen, clen;
+	size_t line, pos, klen, vlen, rlen, clen, slen;
 	bool quoting;
 	bool commanding;
+	bool sourcing;
 };
 
 #endif /* SHP_CONTEXT_H */

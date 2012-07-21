@@ -27,9 +27,34 @@ shp_scan(shp_scanner *scanner)
 
 	for (ctx->pos = 0; (c = *data++) != 0; ctx->pos++) {
 		category = shp_translate(c);
-		/*selector = 1000 * *state + category;*/
 		selector = *state | category;
 		switch (selector) {
+		case STATE_GENERAL | CHAR_DOT:
+		case STATE_IDENTIFIER | CHAR_DOT:
+			*next_state = STATE_SOURCED;
+			break;
+		case STATE_SOURCED | CHAR_SPACE:
+			*next_state = STATE_SOURCED;
+			break;
+		case STATE_SOURCED | CHAR_GENERAL:
+			*next_state = STATE_SOURCED;
+			ctx->src[ctx->slen++] = c;
+			break;
+		case STATE_SOURCED | CHAR_DOLLAR:
+			*next_state = STATE_REFERENCE;
+			ctx->sourcing = true;
+			break;
+		case STATE_SOURCED | CHAR_NEWLINE:
+			*next_state = STATE_IDENTIFIER;
+			ctx->sourcing = false;
+			if (shp_scan_sourced(ctx->src) != SHP_DONE) {
+				sprintf(scanner->error,
+					"Error in external script: `%s'",
+					ctx->src);
+				return (SHP_ERROR);
+			}
+			ctx->slen = 0;
+			break;
 		case STATE_GENERAL | CHAR_GENERAL:
 			*next_state = STATE_IDENTIFIER;
 			--ctx->pos; --data;
@@ -64,9 +89,12 @@ shp_scan(shp_scanner *scanner)
 			ctx->ref[ctx->rlen++] = c;
 			break;
 		case STATE_REFERENCE | CHAR_EBRACE:
-			*next_state = (ctx->commanding)
-				? STATE_SHELLCMD
-				: STATE_VALUE;
+			if (ctx->commanding)
+				*next_state = STATE_SHELLCMD;
+			else if (ctx->sourcing)
+				*next_state = STATE_SOURCED;
+			else
+				*next_state = STATE_VALUE;
 			ctx->ref[ctx->rlen++] = '\0';
 			if ((tmp = getenv(ctx->ref)) == NULL) tmp = "";
 			strncpy(ctx->ref, tmp, strlen(tmp));
@@ -76,6 +104,10 @@ shp_scan(shp_scanner *scanner)
 				strncpy(&ctx->cmd[ctx->clen], ctx->ref,
 					ctx->rlen);
 				ctx->clen += ctx->rlen;
+			} else if (ctx->sourcing) {
+				strncpy(&ctx->src[ctx->slen], ctx->ref,
+					ctx->rlen);
+				ctx->slen += ctx->rlen;
 			} else {
 				strncpy(&ctx->val[ctx->vlen], ctx->ref,
 					ctx->rlen);
@@ -87,6 +119,7 @@ shp_scan(shp_scanner *scanner)
 		case STATE_SHELLCMD | CHAR_GENERAL:
 		case STATE_SHELLCMD | CHAR_SPACE:
 		case STATE_SHELLCMD | CHAR_TAB:
+		case STATE_SHELLCMD | CHAR_DOT:
 		case STATE_SHELLCMD | CHAR_SQUOTE:
 		case STATE_SHELLCMD | CHAR_DQUOTE:
 			*next_state = STATE_SHELLCMD;
@@ -118,6 +151,7 @@ shp_scan(shp_scanner *scanner)
 			break;
 		case STATE_VALUE | CHAR_OPAREN:
 		case STATE_VALUE | CHAR_EPAREN:
+		case STATE_VALUE | CHAR_DOT:
 		case STATE_VALUE | CHAR_GENERAL:
 			*next_state = STATE_VALUE;
 			ctx->val[ctx->vlen++] = c;

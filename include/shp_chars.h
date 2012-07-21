@@ -16,7 +16,8 @@ typedef enum {
 	CHAR_SQUOTE = '\'',
 	CHAR_DQUOTE = '"',
 	CHAR_PIPE = '|',
-	CHAR_AMP = '&'
+	CHAR_AMP = '&',
+	CHAR_DOT = '.'
 } shp_chars;
 
 #endif /* SHP_CHARS_H */
