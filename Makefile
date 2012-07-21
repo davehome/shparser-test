@@ -1,7 +1,7 @@
 TARGET  += shparser-test
 
-SRC     += $(wildcard *.c)
-OBJ     += $(SRC:.c=.o)
+SRC     += $(wildcard src/*.c)
+OBJ     += $(SRC:src/%.c=tmp/%.o)
 
 GWARN   := -Wunsafe-loop-optimizations \
 	   -Wdouble-promotion \
@@ -57,6 +57,7 @@ CFLAGS  += -fstack-protector $(SSP)
 CFLAGS  += -D_FORTIFY_SOURCE=2
 CFLAGS  += -std=c11 -D_XOPEN_SOURCE=700
 CFLAGS  += $(WARN) $(GWARN)
+CFLAGS  += -Iinclude
 LDFLAGS += -Wl,--as-needed
 
 all: $(TARGET)
@@ -64,11 +65,12 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-%.o: %.c
+tmp/%.o: src/%.c
+	@mkdir -p ${@D}
 	$(CC) -o $@ $(CFLAGS) -c $<
 
 clean:
-	$(RM) $(TARGET) $(OBJ)
+	$(RM) -r $(TARGET) tmp
 
 test: all
 	-@for t in $(wildcard tests/*); do			\
