@@ -185,7 +185,7 @@ shp_scan(shp_scanner *scanner)
 			putchar(c);
 			break;
 		default:
-			sprintf(scanner->error, "\nError: %s:%d:%d: Bad %s.",
+			sprintf(scanner->error, "\nError: %s:%zd:%zd: Bad %s.",
 				ctx->filename, ctx->line, ctx->pos + 1,
 				shp_str_state(state));
 			return (SHP_ERROR);

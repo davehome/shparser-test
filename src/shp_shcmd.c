@@ -20,7 +20,7 @@ shp_shcmd(shp_scanner *scanner, const char *cmd)
 
 	if (err != 0 || rv != 0 || read == 0) {
 		err = errno;
-		sprintf(scanner->error, "\nError: %s:%d:%d: %s `%s' %s.",
+		sprintf(scanner->error, "\nError: %s:%zd:%zd: %s `%s' %s.",
 			ctx->filename, ctx->line, ctx->pos - strlen(cmd) + 1,
 			"Executing shell command", cmd, "failed");
 		if (err != 0) fprintf(stderr, "%s\n", strerror(err));
